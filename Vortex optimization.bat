@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Vortex Optimization Suite v2.0 - Universal Gaming and Low-Latency Network Engine
+title Vortex Optimization Suite v2.1 - Universal Gaming and Low-Latency Network Engine
 color 0b
 
 :: =======================================================================
@@ -29,7 +29,7 @@ if /i "%~1"=="/auto" goto :OPT_FULL
 cls
 color 0b
 echo =======================================================================
-echo          VORTEX OPTIMIZATION SUITE v2.0 - s3amm3r
+echo          VORTEX OPTIMIZATION SUITE v2.1 - s3amm3r
 echo     Universal Competitive Gaming, Ethernet and Wi-Fi Engine
 echo =======================================================================
 echo.

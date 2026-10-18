@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Vortex Network Engine v2.0 - Universal High-Performance Ethernet and Wi-Fi Tuning
+    Vortex Network Engine v2.1 - Universal High-Performance Ethernet and Wi-Fi Tuning
 .DESCRIPTION
     Comprehensive low-latency network optimizer for Windows 10/11.
     Universal and Game-Agnostic: Works across all competitive multiplayer games.
@@ -55,7 +55,7 @@ function Write-VortexWarning {
 
 function Show-VortexBanner {
     Write-Host "=======================================================================" -ForegroundColor Cyan
-    Write-Host "         VORTEX NETWORK ENGINE v2.0 (UNIVERSAL GAMING)" -ForegroundColor Yellow
+    Write-Host "         VORTEX NETWORK ENGINE v2.1 (UNIVERSAL GAMING)" -ForegroundColor Yellow
     Write-Host "=======================================================================" -ForegroundColor Cyan
 }
 

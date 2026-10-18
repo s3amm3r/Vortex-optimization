@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Vortex Optimization Suite - Rollback and Revert Engine
+title Vortex Optimization Suite v2.1 - Rollback and Revert Engine
 color 0e
 
 :: =======================================================================
@@ -23,7 +23,7 @@ if %errorlevel% neq 0 (
 
 cls
 echo =======================================================================
-echo              VORTEX OPTIMIZATION - ROLLBACK AND REVERT
+echo              VORTEX OPTIMIZATION v2.1 - ROLLBACK AND REVERT
 echo =======================================================================
 echo This tool will restore Windows default networking and service settings:
 echo   - Reset Network Adapters to DHCP and re-enable hardware offloads

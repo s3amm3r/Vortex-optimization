@@ -1,4 +1,4 @@
-# Vortex Optimization Suite v2.0
+# Vortex Optimization Suite v2.1
 
 **Vortex Optimization Suite** is an advanced, universal Windows batch + PowerShell tuning suite authored by **s3amm3r**, engineered to eliminate micro-stutter, minimize input latency, reduce bufferbloat, and prioritize real-time packet delivery across **all competitive multiplayer games** (Valorant, Counter-Strike 2, Fortnite, Apex Legends, Call of Duty, Overwatch, Rocket League, Rainbow Six Siege, and custom games).
 
