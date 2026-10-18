@@ -119,19 +119,41 @@ if ($Mode -eq 'Revert') {
         Enable-NetAdapterLso -Name $name -IPv4 -IPv6 -ErrorAction SilentlyContinue
         Enable-NetAdapterChecksumOffload -Name $name -ErrorAction SilentlyContinue
         Enable-NetAdapterRsc -Name $name -IPv4 -IPv6 -ErrorAction SilentlyContinue
+        Enable-NetAdapterVmq -Name $name -ErrorAction SilentlyContinue
         Enable-NetAdapterPowerManagement -Name $name -ErrorAction SilentlyContinue
 
-        # Re-enable Ethernet features
+        # Re-enable Ethernet features & default buffer descriptors
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*InterruptModeration" -RegistryValue "1" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*FlowControl" -RegistryValue "3" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*EEE" -RegistryValue "1" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*EnergyEfficientEthernet" -RegistryValue "1" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*GreenEthernet" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*ReceiveBuffers" -RegistryValue "256" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*TransmitBuffers" -RegistryValue "256" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*WakeOnMagicPacket" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*WakeOnPattern" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*PMARPOffload" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*PMNSOffload" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "ShutdownWakeOnLan" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "WolShutdownLinkSpeed" -RegistryValue "2" -ErrorAction SilentlyContinue
 
         # Wi-Fi resets
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*RoamingAggressiveness" -RegistryValue "3" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "RoamAggressiveness" -RegistryValue "3" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*PacketCoalescing" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*MIMOPowerSaveMode" -RegistryValue "2" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "MIMOPowerSaveMode" -RegistryValue "2" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*UAPSD" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "uAPSDSupport" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "ThroughputBoosterEnabled" -RegistryValue "0" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "PreferredBand" -RegistryValue "1" -ErrorAction SilentlyContinue
         netsh wlan set autoconfig enabled=yes interface="$name" 2>&1 | Out-Null
+
+        # Remove DoH template associations if configured
+        if (Get-Command Remove-DnsClientDohServerAddress -ErrorAction SilentlyContinue) {
+            Remove-DnsClientDohServerAddress -ServerAddress "1.1.1.1" -ErrorAction SilentlyContinue
+            Remove-DnsClientDohServerAddress -ServerAddress "1.0.0.1" -ErrorAction SilentlyContinue
+        }
 
         # Remove Nagle bypass on interface
         if ($guid) {
@@ -151,10 +173,18 @@ if ($Mode -eq 'Revert') {
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" -Name "Priority" -Type DWord -Value 2 -ErrorAction SilentlyContinue
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" -Name "Scheduling Category" -Type String -Value "Medium" -ErrorAction SilentlyContinue
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" -Name "SFIO Priority" -Type String -Value "Normal" -ErrorAction SilentlyContinue
+    Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" -Name "GPU Priority" -ErrorAction SilentlyContinue
 
-    # 4. Restore TCP Congestion Provider to default
-    Get-NetTCPSetting -ErrorAction SilentlyContinue | Where-Object { $_.SettingName -in @('Internet', 'InternetCustom') } | ForEach-Object {
-        Set-NetTCPSetting -SettingName $_.SettingName -CongestionProvider default -Timestamps Allowed -EcnCapability Disabled -ErrorAction SilentlyContinue
+    # 4. Clean up global TCP/IP parameters created in Tcpip\Parameters
+    $tcpipParams = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"
+    $vortexKeys = @('DefaultTTL', 'EnableTCPA', 'EnableWsd', 'MaxUserPort', 'TcpTimedWaitDelay', 'StrictTimeWaitSeqCheck')
+    foreach ($vk in $vortexKeys) {
+        Remove-ItemProperty -Path $tcpipParams -Name $vk -ErrorAction SilentlyContinue
+    }
+
+    # 5. Restore TCP Settings to defaults via CIM
+    Get-NetTCPSetting -ErrorAction SilentlyContinue | Where-Object { $_.SettingName -in @('Internet', 'InternetCustom', 'Datacenter', 'DatacenterCustom') } | ForEach-Object {
+        Set-NetTCPSetting -SettingName $_.SettingName -AutoTuningLevelLocal Normal -ScalingHeuristics Enabled -EcnCapability Disabled -Timestamps Allowed -InitialRtoMs 3000 -MinRtoMs 300 -CongestionProvider default -ErrorAction SilentlyContinue
     }
 
     Write-VortexSuccess -Message "Network stack and adapters reverted to standard Windows defaults."
@@ -215,12 +245,11 @@ foreach ($a in $physicalAdapters) {
     }
 
     # Cloudflare DNS and Native DoH (DNS-over-HTTPS)
-    Set-DnsClientServerAddress -InterfaceAlias $name -ServerAddresses ("1.1.1.1","1.0.0.1") -ErrorAction SilentlyContinue
+    Set-DnsClientServerAddress -InterfaceAlias $name -ServerAddresses @("1.1.1.1","1.0.0.1","2606:4700:4700::1111","2606:4700:4700::1001") -ErrorAction SilentlyContinue
     if (Get-Command Set-DnsClientDohServerAddress -ErrorAction SilentlyContinue) {
-        Set-DnsClientDohServerAddress -ServerAddresses "1.1.1.1" -DohTemplate "https://cloudflare-dns.com/dns-query" -AllowFallbackToUdp $true -AutoUpgrade $true -ErrorAction SilentlyContinue
-        Set-DnsClientDohServerAddress -ServerAddresses "1.0.0.1" -DohTemplate "https://cloudflare-dns.com/dns-query" -AllowFallbackToUdp $true -AutoUpgrade $true -ErrorAction SilentlyContinue
+        Set-DnsClientDohServerAddress -ServerAddress "1.1.1.1" -DohTemplate "https://cloudflare-dns.com/dns-query" -AllowFallbackToUdp $true -AutoUpgrade $true -ErrorAction SilentlyContinue
+        Set-DnsClientDohServerAddress -ServerAddress "1.0.0.1" -DohTemplate "https://cloudflare-dns.com/dns-query" -AllowFallbackToUdp $true -AutoUpgrade $true -ErrorAction SilentlyContinue
     }
-    Set-DnsClientServerAddress -InterfaceAlias $name -ServerAddresses ("2606:4700:4700::1111","2606:4700:4700::1001") -Family IPv6 -ErrorAction SilentlyContinue
 
     # --------------------------------------------------------------------------
     # B. Ethernet-Specific Low-Latency Driver Overrides
@@ -323,7 +352,7 @@ Set-ItemProperty -Path $qosReg -Name "Do not use NLA" -Type String -Value "1" -F
 Get-NetQosPolicy -ErrorAction SilentlyContinue | Where-Object { $_.Name -like 'Vortex_*' } | Remove-NetQosPolicy -Confirm:$false -ErrorAction SilentlyContinue
 
 # Universal UDP Gaming Netcode Priority (All multiplayer games)
-New-NetQosPolicy -Name "Vortex_Gaming_UDP" -IPProtocol UDP -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+New-NetQosPolicy -Name "Vortex_Gaming_UDP" -IPProtocolMatchCondition UDP -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
 
 # Common Competitive Game Executables (Extensible Universal Profile List)
 $defaultGameTargets = @(
@@ -343,14 +372,16 @@ $defaultGameTargets = @(
 )
 
 foreach ($exe in $defaultGameTargets) {
-    $policyName = "Vortex_Game_" + [System.IO.Path]::GetFileNameWithoutExtension($exe).Replace('-', '_')
+    $cleanTarget = [System.Text.RegularExpressions.Regex]::Replace([System.IO.Path]::GetFileNameWithoutExtension($exe), '[^a-zA-Z0-9_]', '_')
+    $policyName = "Vortex_Game_" + $cleanTarget
     New-NetQosPolicy -Name $policyName -AppPathNameMatchCondition $exe -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
 }
 
 # Optional Custom User-Specified Process
 if ($CustomProcess -and $CustomProcess.Trim() -ne '') {
-    $cExe = $CustomProcess.Trim()
-    $cName = "Vortex_Custom_" + [System.IO.Path]::GetFileNameWithoutExtension($cExe).Replace('-', '_')
+    $cExe = $CustomProcess.Trim().Trim('"', "'")
+    $cleanCustom = [System.Text.RegularExpressions.Regex]::Replace([System.IO.Path]::GetFileNameWithoutExtension($cExe), '[^a-zA-Z0-9_]', '_')
+    $cName = "Vortex_Custom_" + $cleanCustom
     New-NetQosPolicy -Name $cName -AppPathNameMatchCondition $cExe -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
     Write-VortexSuccess -Message "Custom game process prioritized with DSCP 46: $cExe"
 }
@@ -364,7 +395,7 @@ Write-VortexStatus -Message "Configuring Modern TCP/IP Congestion and Auto-Tunin
 
 $tcpSettings = Get-NetTCPSetting -ErrorAction SilentlyContinue | Where-Object { $_.SettingName -in @('Internet', 'InternetCustom', 'Datacenter', 'DatacenterCustom') }
 foreach ($s in $tcpSettings) {
-    Set-NetTCPSetting -SettingName $s.SettingName -AutoTuningLevelLocal Normal -ScalingHeuristics Disabled -EcnCapability Disabled -Timestamps Disabled -NonSackRttResiliency Disabled -InitialRto 2000 -MinRto 300 -ErrorAction SilentlyContinue
+    Set-NetTCPSetting -SettingName $s.SettingName -AutoTuningLevelLocal Normal -ScalingHeuristics Disabled -EcnCapability Disabled -Timestamps Disabled -NonSackRttResiliency Disabled -InitialRtoMs 2000 -MinRtoMs 300 -ErrorAction SilentlyContinue
     try {
         Set-NetTCPSetting -SettingName $s.SettingName -CongestionProvider CUBIC -ErrorAction Stop
     } catch {

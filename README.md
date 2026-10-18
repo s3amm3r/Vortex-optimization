@@ -93,15 +93,31 @@ Vortex includes an automated 1-click rollback engine that restores Windows defau
 1. Right-click **`vortex-revert.bat`** and select **Run as Administrator** (or select `[5]` in the main menu).
 2. The script will automatically:
    - Reset network adapters back to automatic DHCP.
-   - Re-enable Interrupt Moderation, Flow Control, and default driver offloads.
-   - Remove all `Vortex_*` QoS policies and deletes the NLA bypass.
-   - Restore Windows Multimedia Network Throttling (`10`) and System Responsiveness (`20`).
-   - Reset TCP/IP, Winsock, and DNS catalogs (`netsh int ip reset`, `netsh winsock reset`).
+   - Re-enable Interrupt Moderation, Flow Control, Ring Buffers (256), and default driver offloads.
+   - Restore Wi-Fi MIMO Power Save (Dynamic SMPS), U-APSD, and Roaming Aggressiveness defaults.
+   - Remove all `Vortex_*` QoS policies, Cloudflare DoH templates, and NLA workgroup overrides.
+   - Restore Windows Multimedia Network Throttling (`10`), System Responsiveness (`20`), and `Tasks\Games` priorities.
+   - Remove injected global `Tcpip\Parameters` registry keys (`DefaultTTL`, `EnableTCPA`, etc.).
+   - Restore Netsh TCP stack parameters (DCA, NetDMA, Taskoffload, Neighborcachelimit, Teredo, 6to4, ISATAP) without touching Winsock LSPs or static routes.
+   - Restore GameDVR background capture defaults.
    - Re-enable background services (`DiagTrack`, `SysMain`, `WSearch`).
 3. Restart your PC.
 
 ---
 
+## 🔍 Validation & Testing Status
+
+| Testing Tier | Verification Method | Status | Notes |
+| :--- | :--- | :--- | :--- |
+| **PowerShell Syntax & AST** | In-memory AST Parser (`[System.Management.Automation.Language.Parser]`) | ✅ Verified | 0 AST syntax errors; verified across all modes. |
+| **Batch CLI & Redirection** | Syntax verification & line-by-line fallback parser | ✅ Verified | Escaped block redirection validated without cmd syntax crash. |
+| **Simulated Mock Testing** | Isolated in-memory cmdlet interception (`test_mock_engine.ps1`) | ✅ Verified | Tested `Optimize`, `Revert`, `ToggleWifiScan`, and quoted `CustomProcess` without system mutations. |
+| **Rollback Symmetry** | Direct delta audit between `Optimize` and `Revert` mutations | ✅ Verified | Every modified setting has an exact reverse restoration; Winsock/IP stacks are not clobbered. |
+| **Physical Hardware & ISP** | Real-world NIC transceivers & upstream gateway router DSCP tagging | ⚠️ Unverified | Real NIC driver keywords vary by vendor (Realtek vs Intel vs Marvell); residential ISPs may ignore DSCP 46. |
+
+---
+
 ## 📜 Disclaimer
 
-This tool is provided as-is without warranty. Use at your own risk. It modifies system-level hardware driver properties and network registry configurations intended for dedicated competitive gaming PCs.
+This tool is provided as-is without warranty. Use at your own risk. It modifies system-level hardware driver properties and network registry configurations intended for dedicated competitive gaming PCs. Always review script logic before execution on production or personal environments.
+

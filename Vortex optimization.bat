@@ -73,6 +73,13 @@ if "!custom_exe!"=="" (
     timeout /t 2 >nul
     goto :MENU
 )
+set "custom_exe=!custom_exe:"=!"
+set "custom_exe=!custom_exe:'=!"
+if "!custom_exe!"=="" (
+    echo [!] Invalid executable provided. Returning to menu.
+    timeout /t 2 >nul
+    goto :MENU
+)
 
 echo [*] Applying QoS DSCP 46 and GPU Preference for: !custom_exe!...
 reg add "HKCU\Software\Microsoft\DirectX\UserGpuPreferences" /v "!custom_exe!" /t REG_SZ /d "GpuPreference=2;" /f >nul 2>&1
@@ -294,32 +301,31 @@ if exist "%~dp0vortex-net.ps1" (
 ) else (
     echo [*] Executing embedded PowerShell adapter tuning engine...
     set "FALLBACK_PS=%TEMP%\VortexFallbackNet_%RANDOM%.ps1"
-    (
-        echo $adapters = Get-NetAdapter -Physical -ErrorAction SilentlyContinue
-        echo foreach ($a in $adapters) {
-        echo     $name = $a.Name
-        echo     $guid = $a.InterfaceGuid
-        echo     Disable-NetAdapterPowerManagement -Name $name -ErrorAction SilentlyContinue
-        echo     Disable-NetAdapterLso -Name $name -IPv4 -IPv6 -ErrorAction SilentlyContinue
-        echo     Disable-NetAdapterChecksumOffload -Name $name -ErrorAction SilentlyContinue
-        echo     Disable-NetAdapterRsc -Name $name -IPv4 -IPv6 -ErrorAction SilentlyContinue
-        echo     Disable-NetAdapterVmq -Name $name -ErrorAction SilentlyContinue
-        echo     netsh interface ipv4 set subinterface \"$name\" mtu=1500 store=persistent 2^>^&1 ^| Out-Null
-        echo     Set-DnsClientServerAddress -InterfaceAlias $name -ServerAddresses ("1.1.1.1","1.0.0.1") -ErrorAction SilentlyContinue
-        echo     if ($guid) {
-        echo         Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$guid" -Name "TcpAckFrequency" -Value 1 -Type DWord -ErrorAction SilentlyContinue
-        echo         Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$guid" -Name "TcpDelAckTicks" -Value 0 -Type DWord -ErrorAction SilentlyContinue
-        echo         Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$guid" -Name "TCPNoDelay" -Value 1 -Type DWord -ErrorAction SilentlyContinue
-        echo     }
-        echo }
-        echo Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" -Name "NetworkThrottlingIndex" -Type DWord -Value 0xffffffff -ErrorAction SilentlyContinue
-        echo Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" -Name "SystemResponsiveness" -Type DWord -Value 0 -ErrorAction SilentlyContinue
-        echo $qosReg = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\QoS"
-        echo if (-not (Test-Path $qosReg)) { New-Item -Path $qosReg -Force ^| Out-Null }
-        echo Set-ItemProperty -Path $qosReg -Name "Do not use NLA" -Type String -Value "1" -Force -ErrorAction SilentlyContinue
-        echo Get-NetQosPolicy -ErrorAction SilentlyContinue ^| Where-Object { $_.Name -like 'Vortex_*' } ^| Remove-NetQosPolicy -Confirm:$false -ErrorAction SilentlyContinue
-        echo New-NetQosPolicy -Name "Vortex_Gaming_UDP" -IPProtocol UDP -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue ^| Out-Null
-    ) > "!FALLBACK_PS!"
+    if exist "!FALLBACK_PS!" del "!FALLBACK_PS!" >nul 2>&1
+    >> "!FALLBACK_PS!" echo $adapters = Get-NetAdapter -Physical -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo foreach ($a in $adapters^) {
+    >> "!FALLBACK_PS!" echo     $name = $a.Name
+    >> "!FALLBACK_PS!" echo     $guid = $a.InterfaceGuid
+    >> "!FALLBACK_PS!" echo     Disable-NetAdapterPowerManagement -Name $name -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo     Disable-NetAdapterLso -Name $name -IPv4 -IPv6 -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo     Disable-NetAdapterChecksumOffload -Name $name -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo     Disable-NetAdapterRsc -Name $name -IPv4 -IPv6 -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo     Disable-NetAdapterVmq -Name $name -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo     netsh interface ipv4 set subinterface \"$name\" mtu=1500 store=persistent 2^>^&1 ^| Out-Null
+    >> "!FALLBACK_PS!" echo     Set-DnsClientServerAddress -InterfaceAlias $name -ServerAddresses @("1.1.1.1","1.0.0.1"^) -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo     if ($guid^) {
+    >> "!FALLBACK_PS!" echo         Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$guid" -Name "TcpAckFrequency" -Value 1 -Type DWord -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo         Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$guid" -Name "TcpDelAckTicks" -Value 0 -Type DWord -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo         Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$guid" -Name "TCPNoDelay" -Value 1 -Type DWord -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo     }
+    >> "!FALLBACK_PS!" echo }
+    >> "!FALLBACK_PS!" echo Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" -Name "NetworkThrottlingIndex" -Type DWord -Value 0xffffffff -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" -Name "SystemResponsiveness" -Type DWord -Value 0 -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo $qosReg = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\QoS"
+    >> "!FALLBACK_PS!" echo if (-not (Test-Path $qosReg^)^) { New-Item -Path $qosReg -Force ^| Out-Null }
+    >> "!FALLBACK_PS!" echo Set-ItemProperty -Path $qosReg -Name "Do not use NLA" -Type String -Value "1" -Force -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo Get-NetQosPolicy -ErrorAction SilentlyContinue ^| Where-Object { $_.Name -like 'Vortex_*' } ^| Remove-NetQosPolicy -Confirm:$false -ErrorAction SilentlyContinue
+    >> "!FALLBACK_PS!" echo New-NetQosPolicy -Name "Vortex_Gaming_UDP" -IPProtocolMatchCondition UDP -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue ^| Out-Null
     powershell -NoProfile -ExecutionPolicy Bypass -File "!FALLBACK_PS!"
     del "!FALLBACK_PS!" >nul 2>&1
     echo [✓] Embedded network tuning completed.
