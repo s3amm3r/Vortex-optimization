@@ -1,12 +1,14 @@
 # Vortex Optimization Suite v2.0
 
-**Vortex Optimization Suite** is an advanced Windows batch + PowerShell tuning suite authored by **s3amm3r**, engineered to eliminate micro-stutter, minimize input latency, reduce bufferbloat, and prioritize real-time packet delivery for competitive gaming (specifically Fortnite).
+**Vortex Optimization Suite** is an advanced, universal Windows batch + PowerShell tuning suite authored by **s3amm3r**, engineered to eliminate micro-stutter, minimize input latency, reduce bufferbloat, and prioritize real-time packet delivery across **all competitive multiplayer games** (Valorant, Counter-Strike 2, Fortnite, Apex Legends, Call of Duty, Overwatch, Rocket League, Rainbow Six Siege, and custom games).
 
-It applies deep bare-metal adjustments to CPU scheduling, network transceivers (Ethernet & Wi-Fi), TCP/IP stacks, DNS-over-HTTPS, QoS DSCP 46 priority rules, GPU scheduling, and background services.
+It applies deep bare-metal adjustments to network transceivers (Ethernet & Wi-Fi), TCP/IP stacks, DNS-over-HTTPS, Universal QoS DSCP 46 priority rules, GPU scheduling, and background bloat mitigation.
 
-> ⚠️ **Warning**
-> This script modifies registry values, network adapter driver properties, and system services.
-> While an automated 1-click rollback script (`vortex-revert.bat`) is included, creating a Windows System Restore point before running system tweaks is always recommended.
+> 🛡️ **Zero Power-Plan Interference**  
+> Vortex **does not change, switch, or override your Windows power plan**. Your custom power scheme and battery policies remain 100% intact.
+
+> ⚠️ **Safety & Rollback**  
+> An automated 1-click rollback script (`vortex-revert.bat`) is included to restore default Windows network stacks, DHCP, and services at any time.
 
 ---
 
@@ -14,7 +16,7 @@ It applies deep bare-metal adjustments to CPU scheduling, network transceivers (
 
 ```text
 Vortex-optimization/
-├── Vortex optimization.bat   # Interactive CLI & Master optimization engine
+├── Vortex optimization.bat   # Interactive CLI & Master optimization engine (Options 1–6)
 ├── vortex.bat                # Convenience alias / shortcut runner
 ├── vortex-net.ps1            # Deep Ethernet & Wi-Fi PowerShell network engine
 ├── vortex-revert.bat         # Automated 1-click rollback & restore script
@@ -28,19 +30,19 @@ Vortex-optimization/
 
 | Category | Description |
 | :--- | :--- |
+| **Universal Game Support** | Game-agnostic architecture prioritizing real-time UDP gaming streams and major competitive titles, with support for any custom `.exe`. |
 | **Ethernet Tuning** | Disables Interrupt Moderation, Flow Control, Energy Efficient Ethernet (EEE), Green Ethernet; maximizes Ring Buffers (1024). |
 | **Wi-Fi Tuning** | Minimizes Roaming Aggressiveness (Lowest), disables Packet Coalescing, enforces No SMPS (full MIMO), disables U-APSD, sets Max Transmit Power. |
 | **Wi-Fi Stabilizer** | Integrated toggle to disable Windows WLAN AutoConfig background scanning (eliminating 60-second ping spikes during matches). |
 | **Universal NIC Tuning** | Strips LSO, RSC, VMQ, and Checksum hardware offloads; enforces persistent MTU 1500; disables adapter power management. |
 | **TCP/IP Stack** | Enforces CUBIC congestion provider, disables Nagle algorithm (`TcpAckFrequency=1`, `TcpDelAckTicks=0`), disables TCP timestamps, sets 2000/300ms RTO. |
-| **QoS Priority** | Injects DSCP 46 Expedited Forwarding policies for `FortniteClient-Win64-Shipping.exe` and UDP traffic with workgroup NLA bypass (`Do not use NLA = 1`). |
+| **Universal QoS Priority** | Injects DSCP 46 Expedited Forwarding policies for UDP gaming packets, major titles, and custom game processes with workgroup NLA bypass. |
 | **Network Throttling** | Disables Windows Multimedia Network Packet Throttling (`NetworkThrottlingIndex = 0xffffffff`) and CPU reservation (`SystemResponsiveness = 0`). |
 | **DNS & DoH** | Configures Cloudflare DNS (`1.1.1.1` / `1.0.0.1`) with native DNS-over-HTTPS (DoH) encrypted templates. |
-| **Power & CPU** | Activates Ultimate Performance plan, unparks all cores (`CPMINCORES 100`), bypasses processor sleep idle states (`ProcessorIdleDisable = 1`). |
-| **Storage & Cache** | Clears Fortnite prefetch/webcache, Direct3D caches, NVIDIA DXCache, and AMD DxCache. |
-| **GPU Scheduling** | Forces Discrete High-Performance GPU preference and enables Windows Hardware-Accelerated GPU Scheduling (HAGS). |
-| **Bloat Mitigation** | Kills background sync agents (`OneDrive`, `Cortana`, `Skype`) and disables telemetry services (`DiagTrack`, `SysMain`, `WSearch`). |
-| **Automated Rollback** | Includes dedicated `vortex-revert.bat` to restore default Windows network stacks, power schemes, and services. |
+| **Universal Shader Cache** | Purges Direct3D D3DSCache, NVIDIA DX/GL caches, AMD DX/GL caches, and Intel ShaderCache to resolve stutter from corrupt shaders. |
+| **GPU Scheduling** | Enables Windows Hardware-Accelerated GPU Scheduling (HAGS) and disables GameDVR background recording latency. |
+| **Bloat Mitigation** | Kills background sync agents (`OneDrive`, `Cortana`, `Skype`) and disables high-overhead telemetry services (`DiagTrack`, `SysMain`, `WSearch`). |
+| **Automated Rollback** | Includes dedicated `vortex-revert.bat` to restore default Windows network stacks, DHCP, and services with 1 click. |
 
 ---
 
@@ -68,11 +70,12 @@ Wi-Fi inherently suffers from packet jitter due to radio power states and backgr
 
 1. Open an elevated command prompt or right-click **`Vortex optimization.bat`** (or **`vortex.bat`**) and select **Run as Administrator**.
 2. Select your desired execution mode from the menu:
-   - `[1] Full Vortex Optimization` (Recommended for competitive gaming)
-   - `[2] Network & Adapter Tuning Only` (Ethernet, Wi-Fi, QoS, and TCP/IP)
+   - `[1] Full Vortex Optimization` (Universal network, QoS, shader cache, and system tuning)
+   - `[2] Network and Adapter Tuning Only` (Ethernet, Wi-Fi, Universal QoS, and TCP/IP)
    - `[3] Wi-Fi Ping Spike Stabilizer` (Toggle WLAN background scanning)
-   - `[4] Rollback to Windows Defaults`
-   - `[5] Exit`
+   - `[4] Prioritize Custom Game` (Enter any custom game `.exe` to prioritize with DSCP 46 and GPU Preference)
+   - `[5] Rollback to Windows Defaults`
+   - `[6] Exit`
 3. Restart your PC to allow network drivers and kernel queues to re-bind cleanly.
 
 ### Automated / Headless Execution
@@ -85,16 +88,14 @@ You can run the script non-interactively using the `/y` or `/auto` switch:
 
 ## 🔄 Reverting Changes (Automated Rollback)
 
-Unlike previous iterations, Vortex v2.0 includes a comprehensive, automated 1-click rollback engine:
+Vortex includes an automated 1-click rollback engine that restores Windows defaults **without touching your power plan**:
 
-1. Right-click **`vortex-revert.bat`** and select **Run as Administrator** (or select `[4]` in the main menu).
+1. Right-click **`vortex-revert.bat`** and select **Run as Administrator** (or select `[5]` in the main menu).
 2. The script will automatically:
    - Reset network adapters back to automatic DHCP.
    - Re-enable Interrupt Moderation, Flow Control, and default driver offloads.
-   - Remove `Vortex_Fortnite`, `Vortex_Gaming_UDP`, and `Vortex_EpicGames` QoS policies.
-   - Remove the `Do not use NLA` registry bypass.
+   - Remove all `Vortex_*` QoS policies and deletes the NLA bypass.
    - Restore Windows Multimedia Network Throttling (`10`) and System Responsiveness (`20`).
-   - Restore default Balanced power plans and re-enable CPU sleep states.
    - Reset TCP/IP, Winsock, and DNS catalogs (`netsh int ip reset`, `netsh winsock reset`).
    - Re-enable background services (`DiagTrack`, `SysMain`, `WSearch`).
 3. Restart your PC.
@@ -103,4 +104,4 @@ Unlike previous iterations, Vortex v2.0 includes a comprehensive, automated 1-cl
 
 ## 📜 Disclaimer
 
-This tool is provided as-is without warranty. Use at your own risk. It modifies system-level hardware driver properties and registry configurations intended for dedicated competitive gaming PCs.
+This tool is provided as-is without warranty. Use at your own risk. It modifies system-level hardware driver properties and network registry configurations intended for dedicated competitive gaming PCs.

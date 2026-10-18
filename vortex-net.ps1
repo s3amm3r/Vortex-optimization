@@ -1,24 +1,29 @@
 <#
 .SYNOPSIS
-    Vortex Network Engine v2.0 - High-Performance Ethernet and Wi-Fi Tuning
+    Vortex Network Engine v2.0 - Universal High-Performance Ethernet and Wi-Fi Tuning
 .DESCRIPTION
     Comprehensive low-latency network optimizer for Windows 10/11.
+    Universal and Game-Agnostic: Works across all competitive multiplayer games.
     Tuning targets:
       - Ethernet: Interrupt Moderation, Flow Control, Green/EEE power savings, Transmit/Receive Buffers.
       - Wi-Fi: Roaming Aggressiveness, Packet Coalescing, MIMO Power Save (No SMPS), U-APSD, Transmit Power.
       - Universal: LSO/RSC/VMQ stripping, Checksum offloads, Nagle algorithm bypass (TcpAckFrequency/DelAckTicks),
-                   Cloudflare DNS + DoH, MTU 1500, QoS DSCP 46 Expedited Forwarding, TCP CUBIC stack.
+                   Cloudflare DNS + DoH, MTU 1500, Universal QoS DSCP 46 Expedited Forwarding, TCP CUBIC stack.
 .PARAMETER Mode
     'Optimize'       - Applies deep Ethernet, Wi-Fi, TCP/IP, QoS, and throttling tweaks.
     'NetworkOnly'    - Focuses strictly on physical adapters, DNS, QoS, and TCP/IP stack.
     'Revert'         - Restores Windows defaults, DHCP, default offloads, and removes QoS rules.
     'ToggleWifiScan' - Toggles WLAN AutoConfig background scanning on active Wi-Fi adapters.
+.PARAMETER CustomProcess
+    Optional custom game executable name (e.g. 'MyGame.exe') to prioritize with QoS DSCP 46.
 #>
 
 [CmdletBinding()]
 param(
     [ValidateSet('Optimize', 'NetworkOnly', 'Revert', 'ToggleWifiScan')]
-    [string]$Mode = 'Optimize'
+    [string]$Mode = 'Optimize',
+
+    [string]$CustomProcess = ''
 )
 
 $ErrorActionPreference = 'SilentlyContinue'
@@ -50,7 +55,7 @@ function Write-VortexWarning {
 
 function Show-VortexBanner {
     Write-Host "=======================================================================" -ForegroundColor Cyan
-    Write-Host "         VORTEX NETWORK ENGINE v2.0 (ETHERNET & WI-FI)" -ForegroundColor Yellow
+    Write-Host "         VORTEX NETWORK ENGINE v2.0 (UNIVERSAL GAMING)" -ForegroundColor Yellow
     Write-Host "=======================================================================" -ForegroundColor Cyan
 }
 
@@ -157,7 +162,7 @@ if ($Mode -eq 'Revert') {
 }
 
 # ==============================================================================
-# MODE: OPTIMIZE (ETHERNET + WI-FI + TCP/IP + QOS)
+# MODE: OPTIMIZE (ETHERNET + WI-FI + TCP/IP + UNIVERSAL QOS)
 # ==============================================================================
 Show-VortexBanner
 
@@ -305,26 +310,52 @@ if (Test-Path $gamesTaskPath) {
 Write-VortexSuccess -Message "Network packet throttling disabled (0xffffffff); 100% CPU priority given to game packets."
 
 # ------------------------------------------------------------------------------
-# 3. Quality of Service (QoS) DSCP 46 Policies
+# 3. Universal Quality of Service (QoS) DSCP 46 Policies
 # ------------------------------------------------------------------------------
-Write-VortexStatus -Message "Configuring QoS Policies (DSCP 46 Expedited Forwarding)..."
+Write-VortexStatus -Message "Configuring Universal Gaming QoS Policies (DSCP 46 Expedited Forwarding)..."
 
 # Enable DSCP marking without Active Directory domain (NLA Bypass)
 $qosReg = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\QoS"
 if (-not (Test-Path $qosReg)) { New-Item -Path $qosReg -Force | Out-Null }
 Set-ItemProperty -Path $qosReg -Name "Do not use NLA" -Type String -Value "1" -Force -ErrorAction SilentlyContinue
 
-# Purge existing policies if present
+# Purge existing Vortex policies if present
 Get-NetQosPolicy -ErrorAction SilentlyContinue | Where-Object { $_.Name -like 'Vortex_*' } | Remove-NetQosPolicy -Confirm:$false -ErrorAction SilentlyContinue
 
-# Inject New QoS Policies for Game Clients & UDP
-New-NetQosPolicy -Name "Vortex_Fortnite" -AppPathNameMatchCondition "FortniteClient-Win64-Shipping.exe" -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
-New-NetQosPolicy -Name "Vortex_Fortnite_EAC" -AppPathNameMatchCondition "FortniteClient-Win64-Shipping_EAC.exe" -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
-New-NetQosPolicy -Name "Vortex_Fortnite_BE" -AppPathNameMatchCondition "FortniteClient-Win64-Shipping_BE.exe" -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+# Universal UDP Gaming Netcode Priority (All multiplayer games)
 New-NetQosPolicy -Name "Vortex_Gaming_UDP" -IPProtocol UDP -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
-New-NetQosPolicy -Name "Vortex_EpicGames" -AppPathNameMatchCondition "EpicGamesLauncher.exe" -DSCPAction 34 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
 
-Write-VortexSuccess -Message "QoS DSCP 46 policies created (FortniteClient, EAC/BE, and UDP packets prioritised)."
+# Common Competitive Game Executables (Extensible Universal Profile List)
+$defaultGameTargets = @(
+    'FortniteClient-Win64-Shipping.exe',
+    'FortniteClient-Win64-Shipping_EAC.exe',
+    'FortniteClient-Win64-Shipping_BE.exe',
+    'VALORANT-Win64-Shipping.exe',
+    'cs2.exe',
+    'r5apex.exe',
+    'Overwatch.exe',
+    'RocketLeague.exe',
+    'RainbowSix.exe',
+    'RainbowSix_Vulkan.exe',
+    'cod.exe',
+    'League of Legends.exe',
+    'dota2.exe'
+)
+
+foreach ($exe in $defaultGameTargets) {
+    $policyName = "Vortex_Game_" + [System.IO.Path]::GetFileNameWithoutExtension($exe).Replace('-', '_')
+    New-NetQosPolicy -Name $policyName -AppPathNameMatchCondition $exe -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+}
+
+# Optional Custom User-Specified Process
+if ($CustomProcess -and $CustomProcess.Trim() -ne '') {
+    $cExe = $CustomProcess.Trim()
+    $cName = "Vortex_Custom_" + [System.IO.Path]::GetFileNameWithoutExtension($cExe).Replace('-', '_')
+    New-NetQosPolicy -Name $cName -AppPathNameMatchCondition $cExe -DSCPAction 46 -NetworkProfile All -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+    Write-VortexSuccess -Message "Custom game process prioritized with DSCP 46: $cExe"
+}
+
+Write-VortexSuccess -Message "Universal QoS DSCP 46 policies created (UDP packets & competitive games prioritized)."
 
 # ------------------------------------------------------------------------------
 # 4. Modern TCP/IP Stack Settings via PowerShell CIM
