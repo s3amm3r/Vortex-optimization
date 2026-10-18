@@ -124,10 +124,17 @@ if ($Mode -eq 'Revert') {
 
         # Re-enable Ethernet features & default buffer descriptors
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*InterruptModeration" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*InterruptModerationRate" -RegistryValue "1" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*FlowControl" -RegistryValue "3" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*EEE" -RegistryValue "1" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*EnergyEfficientEthernet" -RegistryValue "1" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*GreenEthernet" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*GigaLite" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*PowerSavingMode" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "AdvancedEEE" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "EnablePME" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "AutoPowerSaveModeEnabled" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "ReduceSpeedOnPowerDown" -RegistryValue "1" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*ReceiveBuffers" -RegistryValue "256" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*TransmitBuffers" -RegistryValue "256" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*WakeOnMagicPacket" -RegistryValue "1" -ErrorAction SilentlyContinue
@@ -145,6 +152,8 @@ if ($Mode -eq 'Revert') {
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "MIMOPowerSaveMode" -RegistryValue "2" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*UAPSD" -RegistryValue "1" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "uAPSDSupport" -RegistryValue "1" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "*TransmitPower" -RegistryValue "5" -ErrorAction SilentlyContinue
+        Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "TxPowerLevel" -RegistryValue "5" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "ThroughputBoosterEnabled" -RegistryValue "0" -ErrorAction SilentlyContinue
         Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "PreferredBand" -RegistryValue "1" -ErrorAction SilentlyContinue
         netsh wlan set autoconfig enabled=yes interface="$name" 2>&1 | Out-Null
