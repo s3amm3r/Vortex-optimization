@@ -1,0 +1,20 @@
+# Temporary & log files
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Editor & IDE configurations
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Windows OS metadata
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Test artifacts and isolated runner outputs
+test_fallback_out.ps1
+*FallbackNet_*.ps1
